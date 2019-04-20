@@ -22,6 +22,17 @@ parser(<<"\\", Bin/binary>>, start, Elements) ->
 parser(<<"{", Bin/binary>>, start, Elements) ->
 	parser(Bin, {block, <<>>}, Elements);
 
+
+parser(<<$\n, Bin/binary>>, {comment, State}, Elements) ->
+	parser(Bin, State, Elements);
+
+parser(<<_, Bin/binary>>, State = {comment, _}, Elements) ->
+	parser(Bin, State, Elements);
+
+parser(<<"%", Bin/binary>>, State, Elements) ->
+	parser(Bin, {comment, State}, Elements);
+
+
 parser(<<"">>, start, Elements) ->
 	{ok, Elements};
 
