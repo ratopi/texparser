@@ -16,11 +16,20 @@ parser(<<Bin/binary>>) ->
 	parser(Bin, start, []).
 
 
+parser(<<>>, start, Elements) ->
+	{ok, Elements};
+
+parser(<<>>, Element, Elements) ->
+	{ok, Elements ++ [Element]};
+
 parser(<<"\\", Bin/binary>>, start, Elements) ->
 	parser(Bin, {macro, <<"">>}, Elements);
 
 parser(<<"{", Bin/binary>>, start, Elements) ->
 	parser(Bin, {block, <<>>}, Elements);
+
+parser(<<"[", Bin/binary>>, start, Elements) ->
+	parser(Bin, {argument, <<>>}, Elements);
 
 
 parser(<<$\n, Bin/binary>>, {comment, State}, Elements) ->
@@ -32,9 +41,6 @@ parser(<<_, Bin/binary>>, State = {comment, _}, Elements) ->
 parser(<<"%", Bin/binary>>, State, Elements) ->
 	parser(Bin, {comment, State}, Elements);
 
-
-parser(<<"">>, start, Elements) ->
-	{ok, Elements};
 
 parser(<<Bin/binary>>, start, Elements) ->
 	parser(Bin, {text, <<"">>}, Elements);
@@ -49,11 +55,19 @@ parser(<<Bin/binary>>, {macro, <<Macro/binary>>}, Elements) ->
 
 
 
-parser(<<Letter, Bin/binary>>, {block, <<Block/binary>>}, Elements) when Letter == $} ->
+parser(<<$}, Bin/binary>>, {block, <<Block/binary>>}, Elements) ->
 	parser(Bin, start, Elements ++ [{block, Block}]);
 
 parser(<<Letter, Bin/binary>>, {block, <<Block/binary>>}, Elements) ->
 	parser(Bin, {block, <<Block/binary, Letter>>}, Elements);
+
+
+
+parser(<<$], Bin/binary>>, {argument, <<Block/binary>>}, Elements) ->
+	parser(Bin, start, Elements ++ [{argument, Block}]);
+
+parser(<<Letter, Bin/binary>>, {argument, <<Block/binary>>}, Elements) ->
+	parser(Bin, {argument, <<Block/binary, Letter>>}, Elements);
 
 
 
